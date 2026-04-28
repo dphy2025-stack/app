@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:proximity_sensor/proximity_sensor.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -111,6 +112,15 @@ class _HappyTalkAppState extends State<HappyTalkApp> {
       debugShowCheckedModeBanner: false,
       title: _appDisplayName,
       theme: base.copyWith(
+        colorScheme: dark
+            ? ColorScheme.fromSeed(
+                seedColor: const Color(0xFF22C55E),
+                brightness: Brightness.dark,
+              )
+            : ColorScheme.fromSeed(
+                seedColor: const Color(0xFF10B981),
+                brightness: Brightness.light,
+              ),
         textTheme: _pickFont(base.textTheme),
         scaffoldBackgroundColor: dark
             ? const Color(0xFF07131E)
@@ -125,6 +135,24 @@ class _HappyTalkAppState extends State<HappyTalkApp> {
           color: dark ? const Color(0xCC0B2334) : const Color(0xD9F8FDFF),
           shadowColor: Colors.black45,
           surfaceTintColor: Colors.transparent,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: dark
+              ? const Color(0x3310B981)
+              : const Color(0x1F10B981),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0x6610B981)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0x6610B981)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF22C55E), width: 1.6),
+          ),
         ),
       ),
       home: HappyTalkHome(
@@ -256,8 +284,9 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
   SharedPreferences? _prefs;
   RtcEngine? _engine;
   Timer? _timer;
+  StreamSubscription<dynamic>? _proximitySub;
 
-  AppLang _lang = AppLang.fa;
+  AppLang _lang = AppLang.en;
   StabilityMode _stability = StabilityMode.balanced;
 
   bool _profileLoaded = false;
@@ -289,7 +318,9 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
   int _profileCallSeconds = 0;
   int _profileSpeakingSeconds = 0;
   bool _mustConfigureBackend = false;
+  bool _nearEar = false;
   int? _localAgoraUid;
+  int? _presenceStreamId;
   bool _localSpeaking = false;
 
   final Map<int, CallUser> _remoteUsers = <int, CallUser>{};
@@ -311,6 +342,7 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
     _roomController.dispose();
     _passwordController.dispose();
     _searchController.dispose();
+    _proximitySub?.cancel();
     _engine?.release();
     _recorder.dispose();
     super.dispose();
@@ -497,49 +529,49 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
     };
     final Map<String, String> fa = <String, String>{
       'title': _appDisplayName,
-      'subtitle': 'ØªÙ…Ø§Ø³ ØµÙˆØªÛŒ Ø®ØµÙˆØµÛŒ Ø¨Ø§ Ú©ÛŒÙÛŒØª Ø¨Ø§Ù„Ø§',
-      'name': 'Ù†Ø§Ù… Ú©Ø§Ø±Ø¨Ø±',
-      'room': 'Ù†Ø§Ù… Ø±ÙˆÙ…',
-      'password': 'Ù¾Ø³ÙˆØ±Ø¯ Ø±ÙˆÙ…',
-      'create': 'Ø³Ø§Ø®Øª Ø±ÙˆÙ…',
-      'join': 'ÙˆØ±ÙˆØ¯ Ø¨Ù‡ Ø±ÙˆÙ…',
-      'start': 'Ø´Ø±ÙˆØ¹ ØªÙ…Ø§Ø³',
-      'joining': 'Ø¯Ø± Ø­Ø§Ù„ Ø§ØªØµØ§Ù„...',
-      'settings': 'ØªÙ†Ø¸ÛŒÙ…Ø§Øª',
-      'contacts': 'Ù…Ø®Ø§Ø·Ø¨ÛŒÙ†',
-      'history': 'ØªØ§Ø±ÛŒØ®Ú†Ù‡',
-      'copyUid': 'Ú©Ù¾ÛŒ UID',
-      'inviteCode': 'Ú©Ø¯ Ø¯Ø¹ÙˆØª Ø±ÙˆÙ…',
-      'copyInvite': 'Ú©Ù¾ÛŒ Ú©Ø¯',
-      'users': 'Ú©Ø§Ø±Ø¨Ø±Ø§Ù† Ø­Ø§Ø¶Ø±',
-      'mute': 'Ù‚Ø·Ø¹ Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ†',
-      'unmute': 'ÙˆØµÙ„ Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ†',
-      'lowerMic': 'Ú©Ø§Ù‡Ø´ Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ†',
-      'normalMic': 'Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ† Ø¹Ø§Ø¯ÛŒ',
-      'record': 'Ø¶Ø¨Ø·',
-      'stopRecord': 'ØªÙˆÙ‚Ù',
-      'leave': 'Ø®Ø±ÙˆØ¬',
-      'quality': 'Ú©ÛŒÙÛŒØª Ø§ØªØµØ§Ù„',
-      'backend': 'Ø¢Ø¯Ø±Ø³ Ø¨Ú©â€ŒØ§Ù†Ø¯',
-      'theme': 'ØªÙ…',
-      'font': 'ÙÙˆÙ†Øª',
-      'stability': 'Ù¾Ø§ÛŒØ¯Ø§Ø±ÛŒ',
-      'save': 'Ø°Ø®ÛŒØ±Ù‡',
-      'search': 'Ø¬Ø³ØªØ¬ÙˆÛŒ UID',
-      'blocked': 'Ø¨Ù„Ø§Ú© Ø´Ø¯Ù‡',
-      'all': 'Ù‡Ù…Ù‡ Ù…Ø®Ø§Ø·Ø¨ÛŒÙ†',
-      'noContacts': 'Ù…Ø®Ø§Ø·Ø¨ÛŒ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯',
-      'noHistory': 'ØªØ§Ø±ÛŒØ®Ú†Ù‡â€ŒØ§ÛŒ Ù†ÛŒØ³Øª',
-      'profile': 'Ù¾Ø±ÙˆÙØ§ÛŒÙ„',
-      'anonymous': 'Ø­Ø§Ù„Øª Ù†Ø§Ø´Ù†Ø§Ø³',
-      'gender': 'Ø¬Ù†Ø³ÛŒØª',
-      'birthDate': 'ØªØ§Ø±ÛŒØ® ØªÙˆÙ„Ø¯',
-      'ringtone': 'Ø±ÛŒÙ†Ú¯ØªÙˆÙ†',
-      'backendRequired': 'Ø¨Ø±Ø§ÛŒ Ø§Ø¯Ø§Ù…Ù‡ Ø¢Ø¯Ø±Ø³ Ø¨Ú©â€ŒØ§Ù†Ø¯ Ø±Ø§ ØªÙ†Ø¸ÛŒÙ… Ú©Ù†ÛŒØ¯',
-      'saveAndContinue': 'Ø°Ø®ÛŒØ±Ù‡ Ùˆ Ø§Ø¯Ø§Ù…Ù‡',
-      'deleteProfile': 'Ø­Ø°Ù Ù¾Ø±ÙˆÙØ§ÛŒÙ„',
-      'deleteProfileWarn': 'Ø­Ø°Ù Ø¯Ø§Ø¦Ù…ÛŒ Ù¾Ø±ÙˆÙØ§ÛŒÙ„',
-      'roomWithPass': 'Ù†Ø§Ù… Ùˆ Ø±Ù…Ø² Ø±ÙˆÙ…',
+      'subtitle': 'تماس صوتی خصوصی با کیفیت بالا',
+      'name': 'نام کاربر',
+      'room': 'نام روم',
+      'password': 'رمز روم',
+      'create': 'ساخت روم',
+      'join': 'ورود به روم',
+      'start': 'شروع تماس',
+      'joining': 'در حال اتصال...',
+      'settings': 'تنظیمات',
+      'contacts': 'مخاطبین',
+      'history': 'تاریخچه',
+      'copyUid': 'کپی UID',
+      'inviteCode': 'کد دعوت روم',
+      'copyInvite': 'کپی کد',
+      'users': 'کاربران حاضر',
+      'mute': 'بی‌صدا',
+      'unmute': 'با صدا',
+      'lowerMic': 'کاهش میکروفون',
+      'normalMic': 'میکروفون عادی',
+      'record': 'ضبط',
+      'stopRecord': 'توقف',
+      'leave': 'خروج',
+      'quality': 'کیفیت اتصال',
+      'backend': 'آدرس بک‌اند',
+      'theme': 'تم',
+      'font': 'فونت',
+      'stability': 'پایداری',
+      'save': 'ذخیره',
+      'search': 'جستجوی UID',
+      'blocked': 'بلاک شده',
+      'all': 'همه مخاطبین',
+      'noContacts': 'مخاطبی وجود ندارد',
+      'noHistory': 'تاریخچه‌ای نیست',
+      'profile': 'پروفایل',
+      'anonymous': 'حالت ناشناس',
+      'gender': 'جنسیت',
+      'birthDate': 'تاریخ تولد',
+      'ringtone': 'زنگ تماس',
+      'backendRequired': 'برای ادامه آدرس بک‌اند را تنظیم کنید',
+      'saveAndContinue': 'ذخیره و ادامه',
+      'deleteProfile': 'حذف پروفایل',
+      'deleteProfileWarn': 'حذف دائمی پروفایل',
+      'roomWithPass': 'نام و رمز روم',
     };
 
     return _lang == AppLang.en ? (en[key] ?? key) : (fa[key] ?? key);
@@ -688,6 +720,7 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
               _profileCallSeconds += 1;
             });
           });
+          _broadcastPresence();
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
           if (!mounted) return;
@@ -702,6 +735,7 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
               lastSeen: DateTime.now().millisecondsSinceEpoch,
             );
           });
+          _broadcastPresence();
         },
         onUserOffline:
             (
@@ -787,6 +821,17 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                 }
               });
             },
+        onStreamMessage:
+            (
+              RtcConnection connection,
+              int remoteUid,
+              int streamId,
+              Uint8List data,
+              int length,
+              int sentTs,
+            ) {
+              _handlePresenceMessage(remoteUid, data);
+            },
       ),
     );
 
@@ -799,6 +844,9 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
       interval: 300,
       smooth: 3,
       reportVad: true,
+    );
+    _presenceStreamId = await engine.createDataStream(
+      const DataStreamConfig(syncWithAudio: false, ordered: true),
     );
 
     _engine = engine;
@@ -1163,6 +1211,10 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
 
     try {
       await _engine?.leaveChannel();
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        await _engine?.setEnableSpeakerphone(true);
+      }
+      await _setProximityMode(false);
     } catch (_) {}
 
     if (roomToCleanupName.isNotEmpty || roomToCleanupKey.isNotEmpty) {
@@ -1215,11 +1267,35 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
   Future<void> _toggleMicGain() async {
     final bool next = !_micLowered;
     await _engine?.adjustRecordingSignalVolume(next ? 35 : 100);
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await _engine?.setEnableSpeakerphone(!next);
+      await _setProximityMode(next);
+    }
     if (mounted) {
       setState(() {
         _micLowered = next;
       });
     }
+  }
+
+  Future<void> _setProximityMode(bool enabled) async {
+    await _proximitySub?.cancel();
+    _proximitySub = null;
+    if (!enabled) {
+      if (mounted) {
+        setState(() {
+          _nearEar = false;
+        });
+      }
+      return;
+    }
+    _proximitySub = ProximitySensor.events.listen((dynamic event) {
+      final bool near = (event is int && event > 0) || event == true;
+      if (!mounted) return;
+      setState(() {
+        _nearEar = near;
+      });
+    });
   }
 
   Future<void> _toggleRecording() async {
@@ -1306,6 +1382,57 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
     return users;
   }
 
+  Future<void> _broadcastPresence() async {
+    final RtcEngine? engine = _engine;
+    final int? streamId = _presenceStreamId;
+    if (engine == null || streamId == null || !_inCall) return;
+    final String payload = jsonEncode(<String, dynamic>{
+      'type': 'presence',
+      'uid': _profileUid,
+      'name': _profileName.isEmpty ? 'User' : _profileName,
+      'emoji': _profileEmoji,
+      'color': _profileColor,
+      'at': DateTime.now().millisecondsSinceEpoch,
+    });
+    try {
+      await engine.sendStreamMessage(
+        streamId: streamId,
+        data: Uint8List.fromList(utf8.encode(payload)),
+        length: payload.length,
+      );
+    } catch (_) {}
+  }
+
+  void _handlePresenceMessage(int remoteUid, Uint8List bytes) {
+    try {
+      final dynamic decoded = jsonDecode(utf8.decode(bytes));
+      if (decoded is! Map<String, dynamic>) return;
+      if ((decoded['type'] as String?) != 'presence') return;
+      final String? name = (decoded['name'] as String?)?.trim();
+      final String? uid = (decoded['uid'] as String?)?.trim();
+      final String? emoji = (decoded['emoji'] as String?)?.trim();
+      final String? color = (decoded['color'] as String?)?.trim();
+      if (!mounted) return;
+      setState(() {
+        _remoteUsers[remoteUid] = CallUser(
+          agoraUid: remoteUid,
+          uid: (uid == null || uid.isEmpty) ? 'AG-$remoteUid' : uid,
+          name: (name == null || name.isEmpty) ? 'User $remoteUid' : name,
+          emoji:
+              (emoji == null || emoji.isEmpty)
+                  ? _profileEmojis[remoteUid % _profileEmojis.length]
+                  : emoji,
+          color:
+              (color == null || color.isEmpty)
+                  ? _profileColors[remoteUid % _profileColors.length]
+                  : color,
+          network: _connectionQuality,
+          lastSeen: DateTime.now().millisecondsSinceEpoch,
+        );
+      });
+    } catch (_) {}
+  }
+
   void _addContact(CallUser user) {
     if (user.uid.isEmpty || user.uid == _profileUid) return;
     if (_contacts[user.uid]?.blocked ?? false) return;
@@ -1385,6 +1512,62 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                                   },
                                   icon: const Icon(Icons.image_outlined),
                                   label: const Text('Upload Profile Photo'),
+                                ),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    Navigator.of(this.context).pop();
+                                    await _deleteProfileCompletely();
+                                  },
+                                  icon: const Icon(
+                                    Icons.delete_forever,
+                                    color: Colors.redAccent,
+                                  ),
+                                  label: const Text(
+                                    'Delete Profile',
+                                    style: TextStyle(color: Colors.redAccent),
+                                  ),
+                                ),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    setModal(() {
+                                      avatarBytes = null;
+                                      avatarBase64 = '';
+                                    });
+                                  },
+                                  icon: const Icon(Icons.delete_outline),
+                                  label: const Text('Remove Profile Photo'),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Expanded(
+                                        child: Text(
+                                          'UID: $_profileUid',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () {
+                                          Clipboard.setData(
+                                            ClipboardData(text: _profileUid),
+                                          );
+                                          _toast('UID copied');
+                                        },
+                                        icon: const Icon(Icons.copy, size: 18),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -1467,26 +1650,6 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                               setModal(() => gender = value);
                             },
                           ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                Navigator.of(this.context).pop();
-                                await _deleteProfileCompletely();
-                              },
-                              icon: const Icon(
-                                Icons.delete_forever,
-                                color: Colors.redAccent,
-                              ),
-                              label: Text(
-                                _tr('deleteProfileWarn'),
-                                style: const TextStyle(
-                                  color: Colors.redAccent,
-                                ),
-                              ),
-                            ),
-                          ),
                           const SizedBox(height: 8),
                           SizedBox(
                             width: double.infinity,
@@ -1503,6 +1666,10 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                                 await _saveState();
                                 if (!mounted) return;
                                 setState(() {});
+                                if (_inCall) {
+                                  await _broadcastPresence();
+                                }
+                                if (!mounted) return;
                                 Navigator.of(this.context).pop();
                               },
                               child: Text(_tr('save')),
@@ -2023,63 +2190,33 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                     ),
                     child: Column(
                       children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            _profileAvatarWidget(
-                              radius: 22,
-                              bytes: _profileAvatarBytes,
-                              emoji: _profileEmoji,
-                              background: accent,
+                        ShaderMask(
+                          shaderCallback: (Rect bounds) => const LinearGradient(
+                            colors: <Color>[
+                              Color(0xFF34D399),
+                              Color(0xFF10B981),
+                              Color(0xFF6EE7B7),
+                            ],
+                          ).createShader(bounds),
+                          child: Text(
+                            _tr('title'),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 44,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.4,
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    _tr('title'),
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w900,
-                                      color: widget.themeMode == AppTheme.dark
-                                          ? Colors.white
-                                          : const Color(0xFF0E3147),
-                                    ),
-                                  ),
-                                  Text(
-                                    _tr('subtitle'),
-                                    style: TextStyle(
-                                      color: Theme.of(context).hintColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                'UID: $_profileUid',
-                                style: const TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                Clipboard.setData(ClipboardData(text: _profileUid));
-                                _toast('UID copied');
-                              },
-                              icon: const Icon(Icons.copy, size: 18),
-                              tooltip: _tr('copyUid'),
-                            ),
-                            IconButton(
-                              onPressed: _openProfileEditor,
-                              icon: const Icon(Icons.edit, size: 18),
-                              tooltip: _tr('profile'),
-                            ),
-                          ],
+                        const SizedBox(height: 6),
+                        Text(
+                          _tr('subtitle'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(context).hintColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Container(
@@ -2166,7 +2303,13 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                       backgroundColor: accent,
                       foregroundColor: Colors.white,
                     ),
-                    child: Text(_joining ? _tr('joining') : _tr('start')),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 260),
+                      child: Text(
+                        _joining ? _tr('joining') : _tr('start'),
+                        key: ValueKey<bool>(_joining),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -2585,6 +2728,12 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                     : (_inCall ? _callView() : _entryView()),
               ),
             ),
+            if (_nearEar && _micLowered && _inCall)
+              const Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(color: Colors.black),
+                ),
+              ),
           ],
         ),
       ),
