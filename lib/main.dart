@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 
@@ -269,7 +269,6 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
   bool _micLowered = false;
   bool _recording = false;
   bool _anonymous = false;
-  bool _showHistory = false;
 
   String _backendUrl = _defaultBackend;
   String _selectedRingtone = 'ringtone_1';
@@ -336,7 +335,7 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
         prefs.getBool('backend_onboarding_done') ?? false;
     _selectedRingtone = prefs.getString('ringtone') ?? 'ringtone_1';
     _anonymous = prefs.getBool('anonymous') ?? false;
-    _lang = (prefs.getString('lang') ?? 'fa') == 'en' ? AppLang.en : AppLang.fa;
+    _lang = (prefs.getString('lang') ?? 'en') == 'en' ? AppLang.en : AppLang.fa;
     final String theme = prefs.getString('theme') ?? 'dark';
     widget.onThemeChanged(theme == 'light' ? AppTheme.light : AppTheme.dark);
     widget.onFontChanged(prefs.getString('font') ?? 'vazirmatn');
@@ -378,6 +377,11 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
             !backendOnboardingDone || _backendUrl.trim().isEmpty;
         _profileLoaded = true;
       });
+      if (!_mustConfigureBackend && _profileName.trim().isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _openProfileEditor();
+        });
+      }
     }
 
     await _saveState();
@@ -493,49 +497,49 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
     };
     final Map<String, String> fa = <String, String>{
       'title': _appDisplayName,
-      'subtitle': 'تماس صوتی خصوصی با کیفیت بالا',
-      'name': 'نام کاربر',
-      'room': 'نام روم',
-      'password': 'پسورد روم',
-      'create': 'ساخت روم',
-      'join': 'ورود به روم',
-      'start': 'شروع تماس',
-      'joining': 'در حال اتصال...',
-      'settings': 'تنظیمات',
-      'contacts': 'مخاطبین',
-      'history': 'تاریخچه',
-      'copyUid': 'کپی UID',
-      'inviteCode': 'کد دعوت روم',
-      'copyInvite': 'کپی کد',
-      'users': 'کاربران حاضر',
-      'mute': 'قطع میکروفون',
-      'unmute': 'وصل میکروفون',
-      'lowerMic': 'کاهش میکروفون',
-      'normalMic': 'میکروفون عادی',
-      'record': 'ضبط',
-      'stopRecord': 'توقف',
-      'leave': 'خروج',
-      'quality': 'کیفیت اتصال',
-      'backend': 'آدرس بک‌اند',
-      'theme': 'تم',
-      'font': 'فونت',
-      'stability': 'پایداری',
-      'save': 'ذخیره',
-      'search': 'جستجوی UID',
-      'blocked': 'بلاک شده',
-      'all': 'همه مخاطبین',
-      'noContacts': 'مخاطبی وجود ندارد',
-      'noHistory': 'تاریخچه‌ای نیست',
-      'profile': 'پروفایل',
-      'anonymous': 'حالت ناشناس',
-      'gender': 'جنسیت',
-      'birthDate': 'تاریخ تولد',
-      'ringtone': 'رینگتون',
-      'backendRequired': 'برای ادامه آدرس بک‌اند را تنظیم کنید',
-      'saveAndContinue': 'ذخیره و ادامه',
-      'deleteProfile': 'حذف پروفایل',
-      'deleteProfileWarn': 'حذف دائمی پروفایل',
-      'roomWithPass': 'نام و رمز روم',
+      'subtitle': 'ØªÙ…Ø§Ø³ ØµÙˆØªÛŒ Ø®ØµÙˆØµÛŒ Ø¨Ø§ Ú©ÛŒÙÛŒØª Ø¨Ø§Ù„Ø§',
+      'name': 'Ù†Ø§Ù… Ú©Ø§Ø±Ø¨Ø±',
+      'room': 'Ù†Ø§Ù… Ø±ÙˆÙ…',
+      'password': 'Ù¾Ø³ÙˆØ±Ø¯ Ø±ÙˆÙ…',
+      'create': 'Ø³Ø§Ø®Øª Ø±ÙˆÙ…',
+      'join': 'ÙˆØ±ÙˆØ¯ Ø¨Ù‡ Ø±ÙˆÙ…',
+      'start': 'Ø´Ø±ÙˆØ¹ ØªÙ…Ø§Ø³',
+      'joining': 'Ø¯Ø± Ø­Ø§Ù„ Ø§ØªØµØ§Ù„...',
+      'settings': 'ØªÙ†Ø¸ÛŒÙ…Ø§Øª',
+      'contacts': 'Ù…Ø®Ø§Ø·Ø¨ÛŒÙ†',
+      'history': 'ØªØ§Ø±ÛŒØ®Ú†Ù‡',
+      'copyUid': 'Ú©Ù¾ÛŒ UID',
+      'inviteCode': 'Ú©Ø¯ Ø¯Ø¹ÙˆØª Ø±ÙˆÙ…',
+      'copyInvite': 'Ú©Ù¾ÛŒ Ú©Ø¯',
+      'users': 'Ú©Ø§Ø±Ø¨Ø±Ø§Ù† Ø­Ø§Ø¶Ø±',
+      'mute': 'Ù‚Ø·Ø¹ Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ†',
+      'unmute': 'ÙˆØµÙ„ Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ†',
+      'lowerMic': 'Ú©Ø§Ù‡Ø´ Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ†',
+      'normalMic': 'Ù…ÛŒÚ©Ø±ÙˆÙÙˆÙ† Ø¹Ø§Ø¯ÛŒ',
+      'record': 'Ø¶Ø¨Ø·',
+      'stopRecord': 'ØªÙˆÙ‚Ù',
+      'leave': 'Ø®Ø±ÙˆØ¬',
+      'quality': 'Ú©ÛŒÙÛŒØª Ø§ØªØµØ§Ù„',
+      'backend': 'Ø¢Ø¯Ø±Ø³ Ø¨Ú©â€ŒØ§Ù†Ø¯',
+      'theme': 'ØªÙ…',
+      'font': 'ÙÙˆÙ†Øª',
+      'stability': 'Ù¾Ø§ÛŒØ¯Ø§Ø±ÛŒ',
+      'save': 'Ø°Ø®ÛŒØ±Ù‡',
+      'search': 'Ø¬Ø³ØªØ¬ÙˆÛŒ UID',
+      'blocked': 'Ø¨Ù„Ø§Ú© Ø´Ø¯Ù‡',
+      'all': 'Ù‡Ù…Ù‡ Ù…Ø®Ø§Ø·Ø¨ÛŒÙ†',
+      'noContacts': 'Ù…Ø®Ø§Ø·Ø¨ÛŒ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯',
+      'noHistory': 'ØªØ§Ø±ÛŒØ®Ú†Ù‡â€ŒØ§ÛŒ Ù†ÛŒØ³Øª',
+      'profile': 'Ù¾Ø±ÙˆÙØ§ÛŒÙ„',
+      'anonymous': 'Ø­Ø§Ù„Øª Ù†Ø§Ø´Ù†Ø§Ø³',
+      'gender': 'Ø¬Ù†Ø³ÛŒØª',
+      'birthDate': 'ØªØ§Ø±ÛŒØ® ØªÙˆÙ„Ø¯',
+      'ringtone': 'Ø±ÛŒÙ†Ú¯ØªÙˆÙ†',
+      'backendRequired': 'Ø¨Ø±Ø§ÛŒ Ø§Ø¯Ø§Ù…Ù‡ Ø¢Ø¯Ø±Ø³ Ø¨Ú©â€ŒØ§Ù†Ø¯ Ø±Ø§ ØªÙ†Ø¸ÛŒÙ… Ú©Ù†ÛŒØ¯',
+      'saveAndContinue': 'Ø°Ø®ÛŒØ±Ù‡ Ùˆ Ø§Ø¯Ø§Ù…Ù‡',
+      'deleteProfile': 'Ø­Ø°Ù Ù¾Ø±ÙˆÙØ§ÛŒÙ„',
+      'deleteProfileWarn': 'Ø­Ø°Ù Ø¯Ø§Ø¦Ù…ÛŒ Ù¾Ø±ÙˆÙØ§ÛŒÙ„',
+      'roomWithPass': 'Ù†Ø§Ù… Ùˆ Ø±Ù…Ø² Ø±ÙˆÙ…',
     };
 
     return _lang == AppLang.en ? (en[key] ?? key) : (fa[key] ?? key);
@@ -558,11 +562,6 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
     return true;
   }
 
-  bool _isNgrokUrl(String value) {
-    final String v = value.trim().toLowerCase();
-    return v.contains('.ngrok-free.app') || v.contains('.ngrok.io');
-  }
-
   bool _ensureMobileBackendIsReachable() {
     final String backend = _backendUrl.trim();
     if (backend.isEmpty) {
@@ -575,12 +574,6 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
       _toast(
         'For phone build, use public backend URL (ngrok HTTPS). localhost/127.0.0.1 is invalid on device.',
       );
-      return false;
-    }
-
-    // User explicitly asked to ensure ngrok connectivity in mobile build.
-    if (!kIsWeb && !_isNgrokUrl(backend)) {
-      _toast('Use your ngrok HTTPS URL in Backend settings for mobile build.');
       return false;
     }
 
@@ -986,7 +979,7 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
   Future<void> _startCall() async {
     if (_joining || _inCall) return;
 
-    final String inputName = _nameController.text.trim();
+    final String inputName = _profileName.trim();
     final String room = _roomController.text.trim();
     final String password = _passwordController.text.trim();
 
@@ -995,8 +988,9 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
       return;
     }
 
-    if (inputName.isEmpty && !_anonymous) {
-      _toast(_tr('name'));
+    if (inputName.isEmpty) {
+      _toast('Set your username in Profile first.');
+      _openProfileEditor();
       return;
     }
 
@@ -1019,7 +1013,6 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
       return;
     }
 
-    _profileName = inputName;
     await _saveState();
 
     final String key = _roomKey(room);
@@ -1624,6 +1617,27 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                             },
                           ),
                           const SizedBox(height: 8),
+                          DropdownButtonFormField<AppLang>(
+                            initialValue: _lang,
+                            decoration: const InputDecoration(
+                              labelText: 'Language',
+                            ),
+                            items: const <DropdownMenuItem<AppLang>>[
+                              DropdownMenuItem<AppLang>(
+                                value: AppLang.en,
+                                child: Text('English'),
+                              ),
+                              DropdownMenuItem<AppLang>(
+                                value: AppLang.fa,
+                                child: Text('ÙØ§Ø±Ø³ÛŒ'),
+                              ),
+                            ],
+                            onChanged: (AppLang? value) {
+                              if (value == null) return;
+                              setModal(() => _lang = value);
+                            },
+                          ),
+                          const SizedBox(height: 8),
                           DropdownButtonFormField<StabilityMode>(
                             initialValue: _stability,
                             decoration: InputDecoration(
@@ -1698,7 +1712,11 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                                 _backendUrl = backend.text.trim();
                                 await _saveState();
                                 if (!mounted) return;
-                                setState(() {});
+                                setState(() {
+                                  _mustConfigureBackend = _backendUrl
+                                      .trim()
+                                      .isEmpty;
+                                });
                                 Navigator.of(this.context).pop();
                               },
                               child: Text(_tr('save')),
@@ -1905,6 +1923,51 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
     );
   }
 
+  void _openHistory() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: _history.isEmpty
+                  ? Center(child: Text(_tr('noHistory')))
+                  : ListView.separated(
+                      itemBuilder: (BuildContext context, int index) {
+                        final CallHistoryItem item = _history[index];
+                        return ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          tileColor: Theme.of(
+                            context,
+                          ).cardColor.withValues(alpha: 0.45),
+                          title: Text(item.room),
+                          subtitle: Text(
+                            '${_formatDate(item.date)} â€¢ ${_formatTimer(item.duration)} â€¢ ${item.quality}',
+                          ),
+                          trailing: Text(item.type),
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const SizedBox(height: 8),
+                      itemCount: _history.length,
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _glassPanel({required Widget child, double radius = 26}) {
     final bool dark = widget.themeMode == AppTheme.dark;
     return ClipRRect(
@@ -1951,238 +2014,183 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: accent.withValues(alpha: 0.5)),
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        accent.withValues(alpha: 0.22),
-                        accent.withValues(alpha: 0.08),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: accent.withValues(alpha: 0.2),
+                      border: Border.all(color: accent.withValues(alpha: 0.45)),
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            _profileAvatarWidget(
+                              radius: 22,
+                              bytes: _profileAvatarBytes,
+                              emoji: _profileEmoji,
+                              background: accent,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    _tr('title'),
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      color: widget.themeMode == AppTheme.dark
+                                          ? Colors.white
+                                          : const Color(0xFF0E3147),
+                                    ),
+                                  ),
+                                  Text(
+                                    _tr('subtitle'),
+                                    style: TextStyle(
+                                      color: Theme.of(context).hintColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                'UID: $_profileUid',
+                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(text: _profileUid));
+                                _toast('UID copied');
+                              },
+                              icon: const Icon(Icons.copy, size: 18),
+                              tooltip: _tr('copyUid'),
+                            ),
+                            IconButton(
+                              onPressed: _openProfileEditor,
+                              icon: const Icon(Icons.edit, size: 18),
+                              tooltip: _tr('profile'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.black26,
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              const Icon(Icons.person_outline),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _profileName.isEmpty ? '-' : _profileName,
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: _openProfileEditor,
+                                icon: const Icon(Icons.edit, size: 16),
+                                label: Text(_tr('profile')),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.record_voice_over, color: accent),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Happy Talk',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                          color: widget.themeMode == AppTheme.dark
-                              ? Colors.white
-                              : const Color(0xFF103246),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _roomController,
+                    decoration: InputDecoration(labelText: _tr('room')),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: !_showPassword,
+                    decoration: InputDecoration(
+                      labelText: _tr('password'),
+                      suffixIcon: IconButton(
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
+                        icon: Icon(
+                          _showPassword ? Icons.visibility_off : Icons.visibility,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: <Widget>[
-                    _profileAvatarWidget(
-                      radius: 20,
-                      bytes: _profileAvatarBytes,
-                      emoji: _profileEmoji,
-                      background: accent,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            _tr('title'),
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                              color: widget.themeMode == AppTheme.dark
-                                  ? Colors.white
-                                  : const Color(0xFF0E3147),
-                            ),
-                          ),
-                          Text(
-                            _tr('subtitle'),
-                            style: TextStyle(
-                              color: Theme.of(context).hintColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    DropdownButton<AppLang>(
-                      value: _lang,
-                      onChanged: (AppLang? value) async {
-                        if (value == null) return;
-                        setState(() {
-                          _lang = value;
-                        });
-                        await _saveState();
-                      },
-                      items: const <DropdownMenuItem<AppLang>>[
-                        DropdownMenuItem<AppLang>(
-                          value: AppLang.en,
-                          child: Text('EN'),
-                        ),
-                        DropdownMenuItem<AppLang>(
-                          value: AppLang.fa,
-                          child: Text('FA'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: accent.withValues(alpha: 0.18),
-                    border: Border.all(color: accent.withValues(alpha: 0.35)),
-                  ),
-                  child: Row(
+                  const SizedBox(height: 10),
+                  Row(
                     children: <Widget>[
                       Expanded(
-                        child: Text(
-                          'UID: $_profileUid',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        child: FilledButton.tonal(
+                          onPressed: () => setState(() => _joinAsCreate = true),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _joinAsCreate
+                                ? accent.withValues(alpha: 0.35)
+                                : null,
+                          ),
+                          child: Text(_tr('create')),
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: _profileUid));
-                          _toast('UID copied');
-                        },
-                        icon: const Icon(Icons.copy, size: 18),
-                        tooltip: _tr('copyUid'),
-                      ),
-                      IconButton(
-                        onPressed: _openProfileEditor,
-                        icon: const Icon(Icons.edit, size: 18),
-                        tooltip: _tr('profile'),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton.tonal(
+                          onPressed: () => setState(() => _joinAsCreate = false),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: !_joinAsCreate
+                                ? accent.withValues(alpha: 0.35)
+                                : null,
+                          ),
+                          child: Text(_tr('join')),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(labelText: _tr('name')),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _roomController,
-                  decoration: InputDecoration(labelText: _tr('room')),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: !_showPassword,
-                  decoration: InputDecoration(
-                    labelText: _tr('password'),
-                    suffixIcon: IconButton(
-                      onPressed: () =>
-                          setState(() => _showPassword = !_showPassword),
-                      icon: Icon(
-                        _showPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: FilledButton.tonal(
-                        onPressed: () => setState(() => _joinAsCreate = true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _joinAsCreate
-                              ? accent.withValues(alpha: 0.35)
-                              : null,
-                        ),
-                        child: Text(_tr('create')),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: FilledButton.tonal(
-                        onPressed: () => setState(() => _joinAsCreate = false),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: !_joinAsCreate
-                              ? accent.withValues(alpha: 0.35)
-                              : null,
-                        ),
-                        child: Text(_tr('join')),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                FilledButton(
-                  onPressed: _joining ? null : _startCall,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    backgroundColor: accent,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text(_joining ? _tr('joining') : _tr('start')),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    OutlinedButton.icon(
-                      onPressed: _openSettings,
-                      icon: const Icon(Icons.settings),
-                      label: Text(_tr('settings')),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _openContacts,
-                      icon: const Icon(Icons.group),
-                      label: Text(_tr('contacts')),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () =>
-                          setState(() => _showHistory = !_showHistory),
-                      icon: const Icon(Icons.history),
-                      label: Text(_tr('history')),
-                    ),
-                  ],
-                ),
-                if (_showHistory) ...<Widget>[
                   const SizedBox(height: 10),
-                  SizedBox(
-                    height: 180,
-                    child: _history.isEmpty
-                        ? Center(child: Text(_tr('noHistory')))
-                        : ListView.separated(
-                            itemBuilder: (BuildContext context, int index) {
-                              final CallHistoryItem item = _history[index];
-                              return ListTile(
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(item.room),
-                                subtitle: Text(
-                                  '${_formatDate(item.date)} • ${_formatTimer(item.duration)} • ${item.quality}',
-                                ),
-                                trailing: Text(item.type),
-                              );
-                            },
-                            separatorBuilder:
-                                (BuildContext context, int index) =>
-                                    const Divider(height: 8),
-                            itemCount: _history.length,
-                          ),
+                  FilledButton(
+                    onPressed: _joining ? null : _startCall,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: accent,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(_joining ? _tr('joining') : _tr('start')),
                   ),
-                ],
+                  const SizedBox(height: 8),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      OutlinedButton.icon(
+                        onPressed: _openSettings,
+                        icon: const Icon(Icons.settings),
+                        label: Text(_tr('settings')),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _openContacts,
+                        icon: const Icon(Icons.group),
+                        label: Text(_tr('contacts')),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _openHistory,
+                        icon: const Icon(Icons.history),
+                        label: Text(_tr('history')),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -2191,7 +2199,6 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
       ),
     );
   }
-
   Widget _backendOnboardingView() {
     final TextEditingController backendController = TextEditingController(
       text: _backendUrl,
@@ -2239,6 +2246,11 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
                   setState(() {
                     _mustConfigureBackend = false;
                   });
+                  if (_profileName.trim().isEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _openProfileEditor();
+                    });
+                  }
                 },
                 child: Text(_tr('saveAndContinue')),
               ),
@@ -2579,3 +2591,4 @@ class _HappyTalkHomeState extends State<HappyTalkHome> {
     );
   }
 }
+
